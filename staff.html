@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>👨‍🍳 MONITOR STAFF - C.VIP TIME</title>
+    <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+    <style>
+        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 40px; }
+        h1 { color: #f39c12; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
+        
+        .search-bar { 
+            background: #1a1a1a; padding: 20px; border-radius: 15px; 
+            margin-bottom: 30px; display: flex; gap: 10px; border: 1px solid #333; 
+        }
+        input { 
+            background: #222; border: 1px solid #444; color: white; 
+            padding: 12px; border-radius: 8px; flex-grow: 1; outline: none;
+        }
+        button { 
+            background: #f39c12; color: black; border: none; 
+            padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; 
+        }
+        
+        table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 15px; overflow: hidden; }
+        th { background: #252525; color: #f39c12; text-align: left; padding: 15px; font-size: 13px; }
+        td { padding: 15px; border-bottom: 1px solid #333; font-size: 14px; }
+
+        .badge { padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .st-0 { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+        .st-1 { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+        .st-2 { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+    </style>
+</head>
+<body>
+
+<h1>👨‍🍳 Monitor de Órdenes</h1>
+
+<div class="search-bar">
+    <input id="ticketAddr" placeholder="Pega la dirección del Ticket aquí...">
+    <button onclick="agregarOrden()">BUSCAR TICKET</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Película</th>
+            <th>Asiento</th>
+            <th>Pedido</th>
+            <th>Chef asignado</th>
+            <th>¿En Sala?</th>
+            <th>Estado Actual</th>
+        </tr>
+    </thead>
+    <tbody id="tablaOrdenes">
+        </tbody>
+</table>
+
+<script>
+    const connection = new solanaWeb3.Connection("https://api.devnet.solana.com", "confirmed");
+
+    async function agregarOrden() {
+        const addr = document.getElementById("ticketAddr").value.trim();
+        if(!addr) return;
+
+        try {
+            const pubkey = new solanaWeb3.PublicKey(addr);
+            const acc = await connection.getAccountInfo(pubkey);
+            
+            if(!acc) return alert("¡Ticket no encontrado en Solana!");
+
+            const data = acc.data;
+            // Función para leer el st
+            const leerS = (i) => {
+                const len = data[i] | (data[i+1] << 8) | (data[i+2] << 16) | (data[i+3] << 24);
+                return { v: new TextDecoder().decode(data.slice(i + 4, i + 4 + len)).replace(/\0/g, ''), s: i + 4 + len };
+            };
+
+            const r1 = leerS(8);       // peli
+            const r2 = leerS(r1.s);    // asiento
+            const r3 = leerS(r2.s);    // pedido
+            const r4 = leerS(r3.s);    // atendido_por
+            const llegada = data[r4.s] === 1; // confirmado_en_sala
+            const estado = data[r4.s + 1];    // estado
+
+            const textos = ["EN ESPERA", "EN COCINA", "¡LISTO!"];
+            
+            const filaExistente = document.getElementById("row-" + addr);
+            if(filaExistente) filaExistente.remove();
+
+            const tr = document.createElement("tr");
+            tr.id = "row-" + addr;
+            tr.innerHTML = `
+                <td><b>${r1.v}</b></td>
+                <td>${r2.v}</td>
+                <td>${r3.v}</td>
+                <td>${r4.v}</td>
+                <td>${llegada ? '✅ SÍ' : '❌ NO'}</td>
+                <td><span class="badge st-${estado}">${textos[estado]}</span></td>
+            `;
+
+            document.getElementById("tablaOrdenes").prepend(tr);
+            document.getElementById("ticketAddr").value = "";
+
+        } catch (e) {
+            alert("La dirección no es válida.");
+            console.error(e);
+        }
+    }
+</script>
+</body>
+</html>

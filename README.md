@@ -38,4 +38,4 @@ Navega a la carpeta del Portal VIP o Monitor Staff.
 
 Abre los archivos .html en cualquier navegador moderno.
 
-Ingresa una Address de Ticket válida de la Devnet (Ejemplo: [7C2R7icfsLb3jDjMf8DdntM9HB5cHyYv1k13SToBvTQr]) para ver la sincronización en tiempo real con la blockchain.
+Ingresa una Address de Ticket válida de la Devnet (Ejemplo: [FHLkCDudaGs8RVSke3uXZ476egE3YdPFqhsPHxkiL42b]) para ver la sincronización en tiempo real con la blockchain.
